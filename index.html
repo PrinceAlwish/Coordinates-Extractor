@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Coordinates Extractor</title>
+	<link rel="icon" href="AI_1.png" type="image/png">
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #007BFF;
+            padding: 20px;
+            color: white;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 0.9rem;
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            border: 2px solid #007BFF;
+            border-radius: 5px;
+            background-color: white;
+            color: #007BFF;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: 0.3s;
+        }
+
+        input[type="file"]:hover {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        button {
+            padding: 12px 24px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #coordinates {
+            font-size: 1.2rem;
+            color: #333;
+            margin-top: 20px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <header>
+        <h1>Upload Image to Extract Coordinates</h1>
+    </header>
+
+    <!-- Main Content Section -->
+    <main>
+        <input type="file" id="imageInput" accept="image/*">
+        <div id="coordinates">
+            <!-- Coordinates will be displayed here -->
+        </div>
+        <button id="openMap" style="display:none;" onclick="openWebMap()">Open Web Map</button>
+    </main>
+
+    <!-- Footer Section with Footnote -->
+    <footer>
+        <p>Note: The image must contain GPS data in its EXIF metadata for the coordinates to be extracted.</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const coordinatesDiv = document.getElementById('coordinates');
+        const openMapButton = document.getElementById('openMap');
+        let latitude, longitude;
+
+        imageInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    EXIF.getData(img, function() {
+                        const lat = EXIF.getTag(this, "GPSLatitude");
+                        const lon = EXIF.getTag(this, "GPSLongitude");
+                        const latRef = EXIF.getTag(this, "GPSLatitudeRef") || "N";
+                        const lonRef = EXIF.getTag(this, "GPSLongitudeRef") || "W";
+
+                        if (lat && lon) {
+                            latitude = (lat[0] + lat[1] / 60 + lat[2] / 3600) * (latRef === "N" ? 1 : -1);
+                            longitude = (lon[0] + lon[1] / 60 + lon[2] / 3600) * (lonRef === "W" ? -1 : 1);
+                            coordinatesDiv.innerHTML = `Coordinates: Latitude: ${latitude.toFixed(6)}, Longitude: ${longitude.toFixed(6)}`;
+                            openMapButton.style.display = "inline-block";
+                        } else {
+                            coordinatesDiv.innerHTML = "No GPS data found in this image.";
+                            openMapButton.style.display = "none";
+                        }
+                    });
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function openWebMap() {
+            if (latitude && longitude) {
+                const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                window.open(mapUrl, '_blank');
+            }
+        }
+    </script>
+<footer>
+        <p>© 2024 Web Mapping. All</p>
+        <p>Developed by AmeisenLAB, driving innovation through AI technology and thought leadership.</p>
+    </footer>
+</body>
+</html>
